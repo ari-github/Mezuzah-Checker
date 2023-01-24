@@ -1,18 +1,36 @@
+from contextlib import contextmanager
+
 import cv2
 import imutils
-from OCR import get_letters, predict_letters
+from OCR import get_letters, predict_letters, get_matching
+
+import cProfile
+import pstats
+
+
+@contextmanager
+def profiler_code():
+    pr = cProfile.Profile()
+    try:
+        pr.enable()
+        yield
+    finally:
+        pr.disable()
+        pr.print_stats(sort="tottime")
 
 
 def show_img(let_list, img):
     green = (0, 255, 0)
     red = (255, 0, 0)
+    i = 0
     for let in let_list:
         if let.rownum % 2 == 0:
             color = red
         else:
             color = green
         cv2.rectangle(img, (let.x, let.y), (let.x + let.w, let.y + let.h), color, 1)
-        cv2.putText(img, str(let.prediction), (let.x, let.y), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 0), 1)
+        cv2.putText(img, str(i), (let.x, let.y), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 0), 1)
+        i+=1
 
     cv2.imshow(f'letter', img)
     cv2.waitKey(0)
@@ -20,7 +38,8 @@ def show_img(let_list, img):
 
 if '__main__' == __name__:
 
-    img_path = 'images/mz1.jpg'
+    # with profiler_code():
+    img_path = 'images/mz2.jpg'
     image = cv2.imread(img_path)
 
     img_resized = imutils.resize(image, width=1200)
@@ -28,6 +47,10 @@ if '__main__' == __name__:
     letter_list = get_letters(image)
     letter_list = predict_letters(letter_list, image, cnn=True)
 
+    get_matching(letter_list, image)
+
     show_img(letter_list, image)
+
+
 
 
